@@ -60,7 +60,7 @@ Relatorios, notificacoes, arquivo e logs
 
 A implementacao futura deve priorizar simplicidade e clareza:
 
-- Python como linguagem principal;
+- Node.js + TypeScript como stack principal;
 - programacao orientada a objetos;
 - Clean Architecture;
 - arquivos CSV como entrada e saida;
@@ -93,9 +93,9 @@ O foco e mostrar dominio sobre:
 - [Workflow](docs/workflow.md)
 - [Arquitetura](docs/architecture.md)
 - [Estrutura do Projeto](docs/project-structure.md)
+- [Escopo do MVP](docs/mvp-scope.md)
 - [Roadmap](docs/roadmap.md)
 
 ## Principio Orientador
 
 Construir apenas o menor conjunto de componentes capaz de demonstrar uma automacao operacional completa, profissional e reutilizavel.
-
