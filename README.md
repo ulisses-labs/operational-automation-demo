@@ -56,9 +56,9 @@ Saidas processadas
 Relatorios, notificacoes, arquivo e logs
 ```
 
-## Tecnologias Previstas
+## Tecnologias
 
-A implementacao futura deve priorizar simplicidade e clareza:
+A implementacao prioriza simplicidade e clareza:
 
 - Node.js + TypeScript como stack principal;
 - programacao orientada a objetos;
@@ -66,10 +66,19 @@ A implementacao futura deve priorizar simplicidade e clareza:
 - arquivos CSV como entrada e saida;
 - API simulada para enriquecimento;
 - logs locais;
-- relatorios em formatos simples, como CSV, JSON ou Markdown;
-- testes automatizados em fase posterior.
+- relatorios em Markdown;
+- notificacao simulada em arquivo texto;
+- testes automatizados com Vitest.
 
 O MVP nao depende de banco de dados, Docker, Kubernetes, microsservicos, frontend ou filas distribuidas.
+
+## MVP Workflow
+
+O projeto agora executa um fluxo local completo a partir de `data/input/customer_requests.csv`.
+
+Ao rodar `npm run dev`, o workflow carrega o lote, valida registros, normaliza campos, detecta duplicidades por e-mail, aplica enriquecimento simulado, classifica cada solicitacao com regras de negocio e gera as saidas operacionais em `data/output`, `reports`, `notifications` e `logs`.
+
+Se o CSV de entrada ainda nao existir, o proprio workflow cria um dataset ficticio com aproximadamente 40 registros usando apenas dados de exemplo.
 
 ## Por Que Este Projeto Existe
 
