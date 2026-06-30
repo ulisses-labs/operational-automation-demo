@@ -96,6 +96,17 @@ O foco e mostrar dominio sobre:
 - [Escopo do MVP](docs/mvp-scope.md)
 - [Roadmap](docs/roadmap.md)
 
+## Comandos Basicos
+
+```bash
+npm install
+npm run dev
+npm run build
+npm run test
+npm run lint
+npm run typecheck
+```
+
 ## Principio Orientador
 
 Construir apenas o menor conjunto de componentes capaz de demonstrar uma automacao operacional completa, profissional e reutilizavel.
