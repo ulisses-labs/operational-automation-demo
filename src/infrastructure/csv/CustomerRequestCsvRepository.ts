@@ -1,0 +1,206 @@
+import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { dirname } from "node:path";
+
+import type {
+  ProcessedCustomerRequest,
+  RawCustomerRequest,
+} from "../../domain/entities/CustomerRequest.js";
+
+const inputHeaders = [
+  "request_id",
+  "customer_name",
+  "email",
+  "phone",
+  "city",
+  "request_type",
+  "estimated_value",
+  "submitted_at",
+] as const;
+
+const outputHeaders = [
+  "request_id",
+  "customer_name",
+  "email",
+  "phone",
+  "city",
+  "request_type",
+  "estimated_value",
+  "submitted_at",
+  "region",
+  "customer_segment",
+  "priority_score",
+  "status",
+  "reasons",
+] as const;
+
+export class CustomerRequestCsvRepository {
+  public async readInput(filePath: string): Promise<RawCustomerRequest[]> {
+    const content = await readFile(filePath, "utf8");
+    const rows = this.parse(content);
+    const [headers, ...records] = rows;
+
+    if (headers === undefined) {
+      return [];
+    }
+
+    return records
+      .filter((record) => record.some((value) => value.trim().length > 0))
+      .map((record) => this.toRawRequest(headers, record));
+  }
+
+  public async writeOutput(
+    filePath: string,
+    records: ProcessedCustomerRequest[],
+  ): Promise<void> {
+    await mkdir(dirname(filePath), { recursive: true });
+
+    const rows = [
+      [...outputHeaders],
+      ...records.map((record) => [
+        record.requestId,
+        record.customerName,
+        record.email,
+        record.phone,
+        record.city,
+        record.requestType,
+        record.estimatedValue === null ? "" : String(record.estimatedValue),
+        record.submittedAt,
+        record.region,
+        record.customerSegment,
+        record.priorityScore === null ? "" : String(record.priorityScore),
+        record.status,
+        record.reasons.join("; "),
+      ]),
+    ];
+
+    await writeFile(filePath, this.stringify(rows), "utf8");
+  }
+
+  public async ensureSampleInput(filePath: string): Promise<void> {
+    await mkdir(dirname(filePath), { recursive: true });
+
+    try {
+      await readFile(filePath, "utf8");
+    } catch {
+      await writeFile(filePath, this.buildSampleCsv(), "utf8");
+    }
+  }
+
+  private toRawRequest(
+    headers: string[],
+    record: string[],
+  ): RawCustomerRequest {
+    const values = new Map<string, string>();
+
+    headers.forEach((header, index) => {
+      values.set(header, record[index] ?? "");
+    });
+
+    return {
+      request_id: values.get("request_id") ?? "",
+      customer_name: values.get("customer_name") ?? "",
+      email: values.get("email") ?? "",
+      phone: values.get("phone") ?? "",
+      city: values.get("city") ?? "",
+      request_type: values.get("request_type") ?? "",
+      estimated_value: values.get("estimated_value") ?? "",
+      submitted_at: values.get("submitted_at") ?? "",
+    };
+  }
+
+  private parse(content: string): string[][] {
+    const rows: string[][] = [];
+    let currentField = "";
+    let currentRow: string[] = [];
+    let inQuotes = false;
+
+    for (let index = 0; index < content.length; index += 1) {
+      const character = content[index] ?? "";
+      const nextCharacter = content[index + 1];
+
+      if (character === '"' && inQuotes && nextCharacter === '"') {
+        currentField += '"';
+        index += 1;
+      } else if (character === '"') {
+        inQuotes = !inQuotes;
+      } else if (character === "," && !inQuotes) {
+        currentRow.push(currentField);
+        currentField = "";
+      } else if (character === "\n" && !inQuotes) {
+        currentRow.push(currentField);
+        rows.push(currentRow);
+        currentRow = [];
+        currentField = "";
+      } else if (character !== "\r") {
+        currentField += character;
+      }
+    }
+
+    if (currentField.length > 0 || currentRow.length > 0) {
+      currentRow.push(currentField);
+      rows.push(currentRow);
+    }
+
+    return rows;
+  }
+
+  private stringify(rows: string[][]): string {
+    return `${rows.map((row) => row.map((value) => this.escape(value)).join(",")).join("\n")}\n`;
+  }
+
+  private escape(value: string): string {
+    if ([",", '"', "\n"].some((character) => value.includes(character))) {
+      return `"${value.replaceAll('"', '""')}"`;
+    }
+
+    return value;
+  }
+
+  private buildSampleCsv(): string {
+    const rows = [
+      [...inputHeaders],
+      ["REQ-001", " Ana Silva ", "ANA.SILVA@example.com", "(11) 99999-1001", "sao paulo", "Upgrade", "6200", "2026-06-01T09:00:00Z"],
+      ["REQ-002", "Bruno Costa", "bruno.costa@demo.test", "+55 21 98888-1002", "Rio de Janeiro", "support", "850", "2026-06-01T09:10:00Z"],
+      ["REQ-003", "Carla Mendes", "carla.mendes@sample.local", "31 97777-1003", "Belo Horizonte", "onboarding", "1500", "2026-06-01T09:20:00Z"],
+      ["REQ-004", "Diego Lima", "diego.lima@example.com", "41966661004", "curitiba", "billing", "250", "2026-06-01T09:30:00Z"],
+      ["REQ-005", "Elaine Rocha", "elaine.rocha@demo.test", "(51) 95555-1005", "Porto Alegre", "cancellation", "90", "2026-06-01T09:40:00Z"],
+      ["REQ-006", "Fernanda Alves", "fernanda.alves@sample.local", "", "Florianopolis", "support", "120", "2026-06-01T09:50:00Z"],
+      ["REQ-007", "", "sem.nome@example.com", "71944441007", "Salvador", "upgrade", "3000", "2026-06-01T10:00:00Z"],
+      ["REQ-008", "Gabriel Nunes", "gabriel.nunes", "81933331008", "Recife", "billing", "410", "2026-06-01T10:10:00Z"],
+      ["REQ-009", "Helena Castro", "helena.castro@example.com", "85922221009", "Fortaleza", "sales", "700", "2026-06-01T10:20:00Z"],
+      ["REQ-010", "Igor Ramos", "igor.ramos@demo.test", "61911111010", "Brasilia", "support", "not-number", "2026-06-01T10:30:00Z"],
+      ["REQ-011", "Julia Torres", "julia.torres@sample.local", "62900001011", "Goiania", "onboarding", "", "2026-06-01T10:40:00Z"],
+      ["REQ-012", "Karen Dias", "karen.dias@example.com", "11988881012", "Campinas", "upgrade", "5200", ""],
+      ["REQ-013", "Lucas Martins", "ana.silva@example.com", "11977771013", "Sao Paulo", "billing", "1000", "2026-06-01T11:00:00Z"],
+      ["REQ-014", "Marina Gomes", "marina.gomes@demo.test", "21966661014", "rio de janeiro", "support", "80", "2026-06-01T11:10:00Z"],
+      ["REQ-015", "Nicolas Pereira", "nicolas.pereira@sample.local", "31955551015", "", "upgrade", "1400", "2026-06-01T11:20:00Z"],
+      ["REQ-016", "Olivia Cardoso", "olivia.cardoso@example.com", "(41) 94444-1016", "Curitiba", "billing", "300", "2026-06-01T11:30:00Z"],
+      ["REQ-017", "Paulo Freitas", "PAULO.FREITAS@DEMO.TEST", "51933331017", "porto alegre", "onboarding", "2200", "2026-06-01T11:40:00Z"],
+      ["REQ-018", "Paula Freitas", "paulo.freitas@demo.test", "51922221018", "Porto Alegre", "support", "1100", "2026-06-01T11:50:00Z"],
+      ["REQ-019", "Rafael Souza", "rafael.souza@sample.local", "", "Florianopolis", "cancellation", "600", "2026-06-01T12:00:00Z"],
+      ["REQ-020", "Sofia Lima", "sofia.lima@example.com", "71911111020", "salvador", "billing", "200", "2026-06-01T12:10:00Z"],
+      ["REQ-021", "Thiago Barros", "thiago.barros@demo.test", "81800001021", "Recife", "upgrade", "7600", "2026-06-01T12:20:00Z"],
+      ["REQ-022", "Uma Vieira", "uma.vieira@sample.local", "85799991022", "Fortaleza", "support", "450", "2026-06-01T12:30:00Z"],
+      ["REQ-023", "Victor Melo", "victor.melo@example.com", "61788881023", "Brasilia", "onboarding", "980", "2026-06-01T12:40:00Z"],
+      ["REQ-024", "Wanda Lopes", "wanda.lopes@demo.test", "62777771024", "Goiania", "billing", "1300", "2026-06-01T12:50:00Z"],
+      ["REQ-025", "Xavier Pinto", "xavier.pinto@sample.local", "11666661025", "Santos", "support", "50", "2026-06-01T13:00:00Z"],
+      ["REQ-026", "Yara Farias", "yara.farias@example.com", "21555551026", "Niteroi", "cancellation", "500", "2026-06-01T13:10:00Z"],
+      ["REQ-027", "Zeca Andrade", "zeca.andrade@demo.test", "31444441027", "Contagem", "upgrade", "5100", "2026-06-01T13:20:00Z"],
+      ["REQ-028", "Aline Matos", "aline.matos@sample.local", "41333331028", "Maringa", "billing", "700", "2026-06-01T13:30:00Z"],
+      ["REQ-029", "Bia Campos", "bia.campos@example.com", "51222221029", "Caxias Do Sul", "support", "300", "2026-06-01T13:40:00Z"],
+      ["REQ-030", "Caio Duarte", "caio.duarte@demo.test", "", "Natal", "onboarding", "1600", "2026-06-01T13:50:00Z"],
+      ["REQ-031", "Dora Neves", "dora.neves@sample.local", "71111111031", "Salvador", "billing", "", "2026-06-01T14:00:00Z"],
+      ["REQ-032", "Enzo Moura", "enzo.moura@example.com", "81000001032", "Recife", "upgrade", "9800", "2026-06-01T14:10:00Z"],
+      ["REQ-033", "Fabi Teixeira", "fabi.teixeira@demo.test", "85999991033", "Fortaleza", "support", "620", "2026-06-01T14:20:00Z"],
+      ["REQ-034", "Guto Reis", "guto.reis@sample.local", "61988881034", "Brasilia", "billing", "1150", "2026-06-01T14:30:00Z"],
+      ["REQ-035", "Hugo Sales", "hugo.sales@example.com", "62777771035", "Goiania", "support", "95", "2026-06-01T14:40:00Z"],
+      ["REQ-036", "Iara Brito", "iara.brito@demo.test", "11666661036", "Sao Paulo", "onboarding", "2500", "2026-06-01T14:50:00Z"],
+      ["REQ-037", "Joao Prado", "joao.prado@sample.local", "21555551037", "Rio de Janeiro", "upgrade", "5400", "2026-06-01T15:00:00Z"],
+      ["REQ-038", "Lia Ramos", "lia.ramos@example.com", "31444441038", "Belo Horizonte", "billing", "1020", "2026-06-01T15:10:00Z"],
+      ["REQ-039", "Mauro Tavares", "mauro.tavares@demo.test", "41333331039", "Curitiba", "support", "400", "2026-06-01T15:20:00Z"],
+      ["REQ-040", "Nina Queiroz", "nina.queiroz@sample.local", "51222221040", "Porto Alegre", "cancellation", "650", "2026-06-01T15:30:00Z"],
+    ];
+
+    return this.stringify(rows);
+  }
+}
