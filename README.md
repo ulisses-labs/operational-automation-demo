@@ -74,11 +74,11 @@ O MVP nao depende de banco de dados, Docker, Kubernetes, microsservicos, fronten
 
 ## MVP Workflow
 
-O projeto agora executa um fluxo local completo a partir de `data/input/customer_requests.csv`.
+O projeto executa um fluxo local completo a partir do CSV versionado em `data/input/customer_requests.csv`.
 
 Ao rodar `npm run dev`, o workflow carrega o lote, valida registros, normaliza campos, detecta duplicidades por e-mail, aplica enriquecimento simulado, classifica cada solicitacao com regras de negocio e gera as saidas operacionais em `data/output`, `reports`, `notifications` e `logs`.
 
-Se o CSV de entrada ainda nao existir, o proprio workflow cria um dataset ficticio com aproximadamente 40 registros usando apenas dados de exemplo.
+O dataset ficticio de entrada fica visivel no repositorio para facilitar revisao publica do case.
 
 ## Por Que Este Projeto Existe
 

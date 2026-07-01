@@ -13,7 +13,6 @@ import { ValidationService } from "../../domain/services/ValidationService.js";
 import type { ProcessCustomerRequestsResult } from "../dtos/ProcessCustomerRequestsResult.js";
 
 interface CustomerRequestRepository {
-  ensureSampleInput(filePath: string): Promise<void>;
   readInput(filePath: string): Promise<RawCustomerRequest[]>;
   writeOutput(
     filePath: string,
@@ -72,8 +71,6 @@ export class ProcessCustomerRequestsUseCase {
     await this.fileLogger.reset();
     await this.fileLogger.info("Workflow started");
     await this.fileLogger.info(`Processing file: ${workflowConfig.inputFile}`);
-
-    await this.csvRepository.ensureSampleInput(workflowConfig.inputFile);
 
     const rawRequests = await this.csvRepository.readInput(workflowConfig.inputFile);
     await this.fileLogger.info(`Total loaded: ${String(rawRequests.length)}`);
