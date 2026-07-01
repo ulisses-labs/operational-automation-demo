@@ -16,4 +16,5 @@ data/output/*
 !archive/.gitkeep
 !data/.gitkeep
 !data/input/.gitkeep
+!data/input/customer_requests.csv
 !data/output/.gitkeep
