@@ -80,6 +80,18 @@ Ao rodar `npm run dev`, o workflow carrega o lote, valida registros, normaliza c
 
 O dataset ficticio de entrada fica visivel no repositorio para facilitar revisao publica do case.
 
+## Como Avaliar o Case
+
+Para revisar rapidamente a jornada publica:
+
+1. Leia o CSV ficticio em [`data/input/customer_requests.csv`](data/input/customer_requests.csv).
+2. Confira o fluxo descrito em [`docs/workflow.md`](docs/workflow.md).
+3. Rode `npm install` e `npm run dev`.
+4. Verifique as saidas geradas em `data/output`, `reports`, `notifications`, `archive` e `logs`.
+5. Compare o padrao de entrega com a oferta [Lead CSV Cleanup Automation](https://github.com/ulisses-labs/automation-starter-nodejs).
+
+O case usa dados ficticios e nao deve receber dados reais ou sensiveis.
+
 ## Por Que Este Projeto Existe
 
 Este repositorio existe para ser uma prova publica de capacidade.
